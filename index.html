@@ -531,7 +531,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.0.2';
+  var APP_VERSION = '1.0.3';
 
   /* ---------------- i18n ---------------- */
   var DICT = {
@@ -591,7 +591,7 @@
       wrongPassword: 'Mot de passe incorrect.',
       damaged: 'PDF illisible ou corrompu.',
       unknownError: 'Échec du traitement. Détails dans la console.',
-      noGain: 'Déjà optimisé : aucun gain supplémentaire.',
+      noGain: 'Déjà optimisé : gain négligeable (< 1 %).',
       verified: 'vérifié',
       notVerified: 'non vérifié',
       before: 'avant',
@@ -670,7 +670,7 @@
       wrongPassword: 'كلمة السر غير صحيحة.',
       damaged: 'ملف PDF غير قابل للقراءة أو تالف.',
       unknownError: 'تعذّر إتمام المعالجة. التفاصيل في وحدة التحكم.',
-      noGain: 'الملف محسّن مسبقاً: لا مكسب إضافياً.',
+      noGain: 'الملف مُحسَّن مسبقاً — التوفير ضئيل (أقل من 1%).',
       verified: 'تم التحقق',
       notVerified: 'غير متحقق',
       before: 'سابقاً',
@@ -713,7 +713,8 @@
   }
   function fmtPercent(value) {
     var locale = lang === 'ar' ? 'ar-DZ' : 'fr-FR';
-    return Math.round(value).toLocaleString(locale) + ' %';
+    var rounded = value < 10 ? Math.round(value * 10) / 10 : Math.round(value);
+    return rounded.toLocaleString(locale) + ' %';
   }
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
@@ -972,7 +973,12 @@
         item.verified = !!(data.verify && data.verify.valid);
         item.mode = data.mode;
         if (data.pages) item.pages = data.pages;
-        item.noGain = blob.size >= item.size;
+        if (item.size > 0 && blob.size / item.size >= 0.99) item.noGain = true;
+        if (blob.size >= item.size && !item.encrypted) {
+          /* Jamais de fichier plus gros : on propose l'original. */
+          item.outBlob = item.file;
+          item.outBytes = item.size;
+        }
         item.status = 'done';
         revokeItemUrl(item);
         updateRow(item);
@@ -1127,10 +1133,10 @@
       refs.btnCompress.disabled = false;
       refs.btnDownload.hidden = false;
       refs.btnPreview.hidden = false;
-      var gain = item.size > 0 ? Math.round((1 - item.outBytes / item.size) * 100) : 0;
+      var gain = item.size > 0 ? (1 - item.outBytes / item.size) * 100 : 0;
       var gainHtml;
-      if (gain > 0) gainHtml = '<span class="gain">−' + fmtPercent(gain) + '</span>';
-      else if (gain === 0) gainHtml = '<span class="flat">' + fmtPercent(0) + '</span>';
+      if (gain > 0.049) gainHtml = '<span class="gain">−' + fmtPercent(gain) + '</span>';
+      else if (gain >= -0.049) gainHtml = '<span class="flat">' + fmtPercent(0) + '</span>';
       else gainHtml = '<span class="flat">+' + fmtPercent(-gain) + '</span>';
       var verifyHtml = item.verified
         ? ' · <span class="ok">' + t('verified') + ' ✓</span>'
@@ -1198,8 +1204,9 @@
     $('#statSum').innerHTML = summary;
     var savingEl = $('#statSaving');
     if (doneItems.length && totalIn > 0) {
-      var gain = Math.round((1 - totalOut / totalIn) * 100);
-      savingEl.textContent = (gain >= 0 ? '−' + fmtPercent(gain) : '+' + fmtPercent(-gain)) + ' ' + t('savings');
+      var gain = (1 - totalOut / totalIn) * 100;
+      var shown = Math.abs(gain) < 0.05 ? fmtPercent(0) : (gain >= 0 ? '−' + fmtPercent(gain) : '+' + fmtPercent(-gain));
+      savingEl.textContent = shown + ' ' + t('savings');
       savingEl.hidden = false;
     } else {
       savingEl.hidden = true;
