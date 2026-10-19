@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Stever PDF Compress — compressez vos fichiers PDF localement, sans envoi : object streams, recompression des flux, optimisation JPEG des images, linéarisation. © ING STEVER.">
+<meta name="author" content="ING STEVER">
+<meta name="theme-color" content="#080d18">
+<title>Stever PDF Compress — Compressez vos PDF en local</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%238b5cf6'/%3E%3Cstop offset='1' stop-color='%230891b2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M45 19H27a8.5 8.5 0 0 0 0 17h11a8.5 8.5 0 0 1 0 17H19' fill='none' stroke='white' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg: #070b14;
+    --surface: rgba(17, 25, 42, .78);
+    --surface-solid: #111a2b;
+    --line: rgba(148, 163, 184, .14);
+    --line-strong: rgba(148, 163, 184, .26);
+    --text: #e6edf7;
+    --muted: #8194b0;
+    --dim: #5f6f88;
+    --violet: #8b5cf6;
+    --violet-deep: #6d28d9;
+    --cyan: #0891b2;
+    --cyan-light: #67e8f9;
+    --green: #34d399;
+    --red: #f87171;
+    --amber: #fbbf24;
+    --radius: 16px;
+  }
+  *{ box-sizing: border-box; }
+  [hidden]{ display: none !important; }
+  html, body{ margin: 0; padding: 0; }
+  body{
+    background:
+      radial-gradient(900px 480px at 12% -8%, rgba(109, 40, 217, .22), transparent 62%),
+      radial-gradient(820px 520px at 92% 4%, rgba(8, 145, 178, .18), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Naskh Arabic", "Noto Sans", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  ::selection{ background: rgba(139, 92, 246, .35); }
+  .shell{ max-width: 1180px; margin: 0 auto; padding: 0 20px 28px; }
+
+  /* ---------- Barre supérieure ---------- */
+  .topbar{ display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 2px 16px; }
+  .brand{ display: flex; align-items: center; gap: 13px; min-width: 0; }
+  .brand-mark{
+    position: relative; width: 46px; height: 46px; flex: 0 0 auto;
+    display: grid; place-items: center; border-radius: 14px; color: #fff;
+    background: linear-gradient(140deg, #8b5cf6 6%, #6d28d9 48%, #0891b2 100%);
+    box-shadow: 0 12px 30px rgba(124, 58, 237, .3), inset 0 1px 0 rgba(255,255,255,.28);
+  }
+  .brand-mark::after{
+    content: ""; position: absolute; inset: 0; border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255,255,255,.2), transparent 45%); pointer-events: none;
+  }
+  .brand-mark svg{ width: 24px; height: 24px; }
+  .brand-copy{ min-width: 0; }
+  .brand-copy h1{
+    margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -.02em; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .brand-copy p{ margin: 1px 0 0; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top-actions{ display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+  .engine{
+    display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted);
+    border: 1px solid var(--line); background: rgba(15, 23, 42, .5);
+    padding: 5px 11px; border-radius: 999px; white-space: nowrap;
+  }
+  .engine i{ width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 10px currentColor; }
+  .engine.ready i{ background: var(--green); }
+  .engine.error i{ background: var(--red); }
+  .lang-switch{
+    display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+    background: rgba(15, 23, 42, .5);
+  }
+  .lang-switch button{
+    appearance: none; border: 0; background: transparent; color: var(--muted);
+    font: inherit; font-weight: 600; font-size: 12px; padding: 6px 11px; cursor: pointer;
+  }
+  .lang-switch button.on{ background: linear-gradient(135deg, rgba(139,92,246,.32), rgba(8,145,178,.28)); color: #fff; }
+  .icon-link{
+    display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 10px;
+    border: 1px solid var(--line); color: var(--muted); background: rgba(15, 23, 42, .5);
+  }
+  .icon-link:hover{ color: var(--text); border-color: var(--line-strong); }
+  .icon-link svg{ width: 17px; height: 17px; }
+
+  /* ---------- Bannière file:// ---------- */
+  .warn-banner{
+    display: none; margin: 0 0 14px; padding: 11px 15px; border-radius: 12px; font-size: 12.5px;
+    border: 1px solid rgba(251, 191, 36, .35); background: rgba(251, 191, 36, .08); color: #fcd34d;
+  }
+  .warn-banner.show{ display: block; }
+
+  /* ---------- Zone de dépôt ---------- */
+  .dropzone{
+    position: relative; border: 1.6px dashed rgba(148, 163, 184, .32); border-radius: 22px;
+    background: linear-gradient(180deg, rgba(17, 25, 42, .6), rgba(10, 16, 30, .6));
+    padding: 34px 24px; text-align: center; cursor: pointer; transition: border-color .18s, box-shadow .18s, background .18s;
+  }
+  .dropzone:hover, .dropzone.hover{
+    border-color: rgba(139, 92, 246, .65);
+    box-shadow: 0 0 0 1px rgba(139,92,246,.25), 0 22px 60px -22px rgba(139, 92, 246, .45);
+  }
+  .dropzone.hover{ background: rgba(139, 92, 246, .07); }
+  .dz-icon{
+    width: 58px; height: 58px; margin: 0 auto 12px; border-radius: 18px; display: grid; place-items: center;
+    color: #fff; background: linear-gradient(140deg, #8b5cf6 6%, #6d28d9 48%, #0891b2 100%);
+    box-shadow: 0 16px 40px -12px rgba(124, 58, 237, .55);
+  }
+  .dz-icon svg{ width: 27px; height: 27px; }
+  .dz-title{ font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+  .dz-sub{ color: var(--muted); font-size: 12.5px; margin-top: 3px; }
+  .dz-btn{ margin-top: 14px; }
+  .privacy-note{
+    display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; font-size: 11.5px; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; background: rgba(15, 23, 42, .5);
+  }
+  .privacy-note svg{ width: 12px; height: 12px; color: var(--green); }
+
+  /* ---------- Grille ---------- */
+  .layout{ display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 20px; margin-top: 20px; align-items: start; }
+  .col-settings{ position: sticky; top: 16px; display: grid; gap: 16px; }
+  .col-main{ display: grid; gap: 16px; min-width: 0; }
+
+  .card{
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    backdrop-filter: blur(10px); padding: 18px;
+  }
+  .card h2{
+    margin: 0 0 3px; font-size: 14.5px; font-weight: 700; letter-spacing: -.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 svg{ width: 15px; height: 15px; color: var(--cyan-light); }
+  .card .card-sub{ margin: 0 0 13px; font-size: 11.8px; color: var(--muted); }
+
+  /* ---------- Préréglages ---------- */
+  .preset-grid{ display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .preset{
+    position: relative; text-align: start; cursor: pointer; border-radius: 13px; padding: 11px 12px;
+    border: 1px solid var(--line); background: rgba(10, 16, 30, .55); color: inherit; font: inherit;
+    transition: border-color .15s, background .15s, transform .1s;
+  }
+  .preset:hover{ border-color: var(--line-strong); }
+  .preset:active{ transform: scale(.985); }
+  .preset .p-title{ display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13px; }
+  .preset .p-title .dot{ width: 8px; height: 8px; border-radius: 3px; background: var(--dim); flex: 0 0 auto; }
+  .preset .p-desc{ margin-top: 3px; font-size: 11.2px; color: var(--muted); line-height: 1.45; }
+  .preset .p-flag{
+    position: absolute; inset-inline-end: 9px; top: 9px; font-size: 9.5px; font-weight: 700; letter-spacing: .04em;
+    color: #c4b5fd; border: 1px solid rgba(139, 92, 246, .4); border-radius: 999px; padding: 1px 7px;
+    background: rgba(139, 92, 246, .12);
+  }
+  .preset.active{
+    border-color: rgba(139, 92, 246, .75);
+    background: linear-gradient(160deg, rgba(139, 92, 246, .16), rgba(8, 145, 178, .1));
+    box-shadow: 0 10px 34px -18px rgba(139, 92, 246, .8);
+  }
+  .preset.active .dot{ background: linear-gradient(140deg, var(--violet), var(--cyan)); }
+  .preset.active .p-title{ color: #fff; }
+
+  /* ---------- Options avancées ---------- */
+  details.adv{ border-top: 1px solid var(--line); margin-top: 13px; padding-top: 11px; }
+  details.adv summary{
+    cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px;
+    font-size: 12.6px; font-weight: 600; color: #b9c9df; user-select: none;
+  }
+  details.adv summary::-webkit-details-marker{ display: none; }
+  details.adv summary svg{ width: 13px; height: 13px; transition: transform .18s; color: var(--muted); }
+  details.adv[open] summary svg{ transform: rotate(90deg); }
+  .adv-body{ display: grid; gap: 12px; margin-top: 13px; }
+  .adv-row{ display: grid; gap: 5px; }
+  .adv-row .lbl{ display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 12px; color: #c6d3e6; }
+  .adv-row .lbl b{ color: var(--cyan-light); font-weight: 700; font-size: 11.5px; }
+  input[type="range"]{ width: 100%; accent-color: var(--violet); height: 22px; }
+  select{
+    width: 100%; font: inherit; font-size: 12.5px; color: var(--text); background: #0d1524;
+    border: 1px solid var(--line); border-radius: 9px; padding: 7px 9px; outline: none;
+  }
+  select:focus{ border-color: rgba(139, 92, 246, .6); }
+  .switch-row{ display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12.3px; color: #c6d3e6; }
+  .switch-row .hint{ display: block; font-size: 10.8px; color: var(--dim); }
+  .switch{ position: relative; flex: 0 0 auto; width: 38px; height: 22px; }
+  .switch input{ position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .switch i{
+    position: absolute; inset: 0; border-radius: 999px; background: #24324a; transition: background .15s;
+    border: 1px solid var(--line);
+  }
+  .switch i::after{
+    content: ""; position: absolute; top: 2px; inset-inline-start: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: #94a3b8; transition: transform .16s, background .16s;
+  }
+  .switch input:checked + i{ background: linear-gradient(135deg, rgba(139,92,246,.85), rgba(8,145,178,.85)); border-color: transparent; }
+  .switch input:checked + i::after{ transform: translateX(16px); background: #fff; }
+  [dir="rtl"] .switch input:checked + i::after{ transform: translateX(-16px); }
+
+  .tips{ display: grid; gap: 9px; }
+  .tip-card{
+    display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 12px; background: rgba(10, 16, 30, .45);
+  }
+  .tip-icon{
+    flex: 0 0 auto; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+    background: rgba(8, 145, 178, .16); color: var(--cyan-light);
+  }
+  .tip-icon svg{ width: 14px; height: 14px; }
+  .tip-card strong{ display: block; font-size: 12.2px; }
+  .tip-card p{ margin: 1px 0 0; font-size: 11.1px; color: var(--muted); line-height: 1.5; }
+
+  /* ---------- Barre d'actions / stats ---------- */
+  .stats{
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    border: 1px solid var(--line); border-radius: 14px; padding: 11px 14px;
+    background: linear-gradient(160deg, rgba(17, 25, 42, .85), rgba(10, 16, 30, .7));
+  }
+  .stats .sum{ font-size: 12.5px; color: #c6d3e6; }
+  .stats .sum b{ color: #fff; }
+  .stats .saving{
+    font-size: 12.5px; font-weight: 800; color: var(--green);
+    border: 1px solid rgba(52, 211, 153, .35); background: rgba(52, 211, 153, .1);
+    border-radius: 999px; padding: 3px 11px;
+  }
+  .stats .spacer{ flex: 1 1 auto; }
+  .btn{
+    appearance: none; border: 0; font: inherit; cursor: pointer; border-radius: 11px;
+    display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+    padding: 9px 16px; font-weight: 700; font-size: 13px; transition: transform .1s, box-shadow .15s, opacity .15s, border-color .15s;
+  }
+  .btn:active{ transform: scale(.98); }
+  .btn:disabled{ opacity: .45; cursor: not-allowed; }
+  .btn.primary{
+    color: #fff; background: linear-gradient(135deg, #8b5cf6, #6d28d9 55%, #0891b2);
+    box-shadow: 0 14px 34px -14px rgba(124, 58, 237, .75);
+  }
+  .btn.primary:hover:not(:disabled){ box-shadow: 0 16px 40px -14px rgba(124, 58, 237, .95); }
+  .btn.ghost{
+    color: #c6d3e6; background: rgba(15, 23, 42, .6); border: 1px solid var(--line);
+  }
+  .btn.ghost:hover:not(:disabled){ border-color: var(--line-strong); color: #fff; }
+  .btn.small{ padding: 7px 12px; font-size: 12px; border-radius: 9px; }
+  .btn svg{ width: 15px; height: 15px; }
+
+  /* ---------- Liste de fichiers ---------- */
+  .list{ display: grid; gap: 10px; }
+  .empty{
+    border: 1px dashed var(--line-strong); border-radius: 14px; padding: 26px 18px; text-align: center; color: var(--muted);
+  }
+  .empty svg{ width: 30px; height: 30px; color: var(--dim); }
+  .empty p{ margin: 9px 0 0; font-size: 12.5px; }
+
+  .file-card{
+    border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
+    background: linear-gradient(170deg, rgba(17, 25, 42, .8), rgba(10, 16, 30, .72));
+    display: grid; gap: 10px;
+  }
+  .file-card.working{ border-color: rgba(139, 92, 246, .5); }
+  .file-card.done{ border-color: rgba(52, 211, 153, .35); }
+  .file-card.error{ border-color: rgba(248, 113, 113, .4); }
+  .file-main{ display: flex; gap: 12px; align-items: flex-start; }
+  .file-icon{
+    flex: 0 0 auto; width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+    background: rgba(139, 92, 246, .14); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, .22);
+  }
+  .file-icon svg{ width: 19px; height: 19px; }
+  .file-info{ min-width: 0; flex: 1 1 auto; }
+  .file-name{
+    font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    unicode-bidi: plaintext;
+  }
+  .file-sub{ font-size: 11.4px; color: var(--muted); margin-top: 2px; }
+  .file-result{ font-size: 12px; margin-top: 4px; color: #c6d3e6; }
+  .file-result .gain{ color: var(--green); font-weight: 800; }
+  .file-result .flat{ color: var(--amber); font-weight: 700; }
+  .file-result .ok{ color: var(--green); }
+  .file-error{ font-size: 11.6px; margin-top: 4px; color: var(--red); }
+  .file-side{ display: flex; flex-direction: column; align-items: flex-end; gap: 7px; flex: 0 0 auto; }
+  .badge{
+    font-size: 10.6px; font-weight: 700; letter-spacing: .02em; border-radius: 999px; padding: 3px 10px;
+    border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+  }
+  .badge.working{ color: #c4b5fd; border-color: rgba(139, 92, 246, .5); background: rgba(139, 92, 246, .12); }
+  .badge.done{ color: var(--green); border-color: rgba(52, 211, 153, .4); background: rgba(52, 211, 153, .1); }
+  .badge.error{ color: var(--red); border-color: rgba(248, 113, 113, .4); background: rgba(248, 113, 113, .1); }
+  .badge.lock{ color: var(--amber); border-color: rgba(251, 191, 36, .4); background: rgba(251, 191, 36, .08); }
+  .row-actions{ display: flex; gap: 6px; }
+  .mini-btn{
+    appearance: none; border: 1px solid var(--line); background: rgba(15, 23, 42, .6); color: var(--muted);
+    width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; cursor: pointer;
+  }
+  .mini-btn:hover:not(:disabled){ color: #fff; border-color: var(--line-strong); }
+  .mini-btn:disabled{ opacity: .35; cursor: not-allowed; }
+  .mini-btn svg{ width: 14px; height: 14px; }
+  .progress{ height: 5px; border-radius: 999px; background: rgba(148, 163, 184, .14); overflow: hidden; position: relative; }
+  .progress i{
+    position: absolute; top: 0; bottom: 0; width: 34%; border-radius: 999px;
+    background: linear-gradient(90deg, #8b5cf6, #0891b2);
+    animation: slide 1.2s ease-in-out infinite;
+  }
+  @keyframes slide{ 0%{ inset-inline-start: -34%; } 100%{ inset-inline-start: 100%; } }
+  .pwd-row{ display: flex; gap: 8px; align-items: center; }
+  .pwd-row input{
+    flex: 1 1 auto; font: inherit; font-size: 12.5px; color: var(--text); background: #0d1524;
+    border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; outline: none;
+  }
+  .pwd-row input:focus{ border-color: rgba(251, 191, 36, .55); }
+  .pwd-row .hint{ font-size: 10.8px; color: var(--dim); }
+
+  /* ---------- Pied de page ---------- */
+  .footer{
+    display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+    margin-top: 24px; padding: 0 2px; color: var(--dim); font-size: 10.6px; line-height: 1.6;
+  }
+  .footer a{ color: var(--cyan-light); text-decoration: none; border-bottom: 1px solid rgba(103, 232, 249, .35); }
+  .footer a:hover{ border-bottom-color: var(--cyan-light); }
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 16px);
+    background: #101a2e; border: 1px solid var(--line-strong); color: var(--text);
+    padding: 11px 18px; border-radius: 12px; font-size: 12.5px; box-shadow: 0 20px 50px -18px rgba(0,0,0,.8);
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 50; max-width: min(92vw, 520px); text-align: center;
+  }
+  .toast.show{ opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 980px){
+    .layout{ grid-template-columns: 1fr; }
+    .col-settings{ position: static; }
+    .topbar{ flex-wrap: wrap; }
+    .brand-copy p{ display: none; }
+  }
+  @media (max-width: 560px){
+    .shell{ padding: 0 13px 22px; }
+    .preset-grid{ grid-template-columns: 1fr; }
+    .stats{ align-items: stretch; }
+    .stats .spacer{ display: none; }
+    .stats .btn{ flex: 1 1 auto; }
+    .brand-copy h1{ font-size: 16.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M16.6 6.7H9.4a3 3 0 0 0 0 6h5.2a3 3 0 0 1 0 6H7.4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="2.9" y="2.9" width="3.2" height="3.2" rx="1" fill="currentColor"/>
+          <rect x="17.9" y="17.9" width="3.2" height="3.2" rx="1" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="brand-copy">
+        <h1>Stever PDF Compress</h1>
+        <p data-i18n="tagline">Compression PDF locale — par ING STEVER.</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="engine" id="engineStatus"><i></i><span data-i18n="engineLoading">Chargement du moteur…</span></span>
+      <div class="lang-switch" role="group" aria-label="Langue">
+        <button type="button" data-lang="fr">FR</button>
+        <button type="button" data-lang="ar">عربية</button>
+      </div>
+      <a class="icon-link" href="https://github.com/STEVERLAABS/stever-pdf-compress" target="_blank" rel="noopener" title="GitHub">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.17-.02-2.12-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.75 2.69 1.25 3.35.95.1-.75.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.25 5.67.41.35.77 1.05.77 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <div class="warn-banner" id="fileWarn" data-i18n="fileWarn">
+    Ouvrez cette page via le site en ligne ou un serveur local : le moteur WebAssembly ne fonctionne pas avec le protocole file://.
+  </div>
+
+  <section class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Ajouter des fichiers PDF">
+    <div class="dz-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 16V4m0 0 4 4m-4-4L8 8"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>
+      </svg>
+    </div>
+    <div class="dz-title" data-i18n="dropTitle">Déposez vos fichiers PDF ici</div>
+    <div class="dz-sub" data-i18n="dropSub">Plusieurs fichiers à la fois — compression par lots.</div>
+    <button type="button" class="btn primary dz-btn" id="pickBtn" data-i18n="chooseBtn">Choisir des fichiers PDF</button>
+    <div><span class="privacy-note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span data-i18n="privacyNote">Aucun envoi : tout reste sur votre appareil.</span>
+    </span></div>
+    <input type="file" id="fileInput" accept="application/pdf,.pdf" multiple hidden>
+  </section>
+
+  <div class="layout">
+
+    <div class="col-settings">
+      <div class="card">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M1 14h6M9 8h6M17 16h6"/></svg>
+          <span data-i18n="presetTitle">Niveau de compression</span>
+        </h2>
+        <p class="card-sub" data-i18n="presetSub">Choisissez la qualité souhaitée — les économies sont indicatives.</p>
+        <div class="preset-grid" id="presetGrid">
+          <button type="button" class="preset" data-preset="lossless">
+            <span class="p-title"><span class="dot"></span><span data-i18n="pLossless">Sans perte</span></span>
+            <span class="p-desc" data-i18n="pLosslessDesc">Structure et flux optimisés, images intactes.</span>
+          </button>
+          <button type="button" class="preset" data-preset="light">
+            <span class="p-title"><span class="dot"></span><span data-i18n="pLight">Léger</span></span>
+            <span class="p-desc" data-i18n="pLightDesc">Images recompressées en qualité élevée (85).</span>
+          </button>
+          <button type="button" class="preset" data-preset="balanced">
+            <span class="p-flag" data-i18n="recommended">conseillé</span>
+            <span class="p-title"><span class="dot"></span><span data-i18n="pBalanced">Équilibré</span></span>
+            <span class="p-desc" data-i18n="pBalancedDesc">Bon compromis taille/qualité (70). Idéal documents scannés.</span>
+          </button>
+          <button type="button" class="preset" data-preset="extreme">
+            <span class="p-title"><span class="dot"></span><span data-i18n="pExtreme">Extrême</span></span>
+            <span class="p-desc" data-i18n="pExtremeDesc">Réduction maximale (45) pour l'envoi par e-mail.</span>
+          </button>
+        </div>
+
+        <details class="adv" id="advDetails">
+          <summary>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+            <span data-i18n="advTitle">Options avancées</span>
+          </summary>
+          <div class="adv-body">
+            <div class="adv-row">
+              <span class="lbl"><span data-i18n="qualityLabel">Qualité JPEG des images</span><b id="qualityVal">70</b></span>
+              <input type="range" id="qualityRange" min="30" max="95" step="5" value="70">
+            </div>
+            <div class="adv-row">
+              <span class="lbl"><span data-i18n="minAreaLabel">Images concernées</span></span>
+              <select id="minAreaSelect">
+                <option value="0" data-i18n="areaAll">Toutes les images</option>
+                <option value="4096" data-i18n="area64">À partir de 64 × 64</option>
+                <option value="16384" data-i18n="area128">À partir de 128 × 128</option>
+                <option value="65536" data-i18n="area256">À partir de 256 × 256</option>
+              </select>
+            </div>
+            <div class="switch-row">
+              <span><span data-i18n="optImages">Recompresser les images (JPEG)</span><span class="hint" data-i18n="optImagesHint">Gain principal sur les documents scannés.</span></span>
+              <label class="switch"><input type="checkbox" id="optImages"><i></i></label>
+            </div>
+            <div class="switch-row">
+              <span><span data-i18n="optWeb">Optimiser pour le web (linéarisation)</span><span class="hint" data-i18n="optWebHint">Ouverture instantanée de la première page.</span></span>
+              <label class="switch"><input type="checkbox" id="optWeb"><i></i></label>
+            </div>
+            <div class="switch-row">
+              <span><span data-i18n="optObjects">Compresser la structure (objets)</span><span class="hint" data-i18n="optObjectsHint">Object streams — gain sur les gros fichiers.</span></span>
+              <label class="switch"><input type="checkbox" id="optObjects"><i></i></label>
+            </div>
+            <div class="switch-row">
+              <span><span data-i18n="optNormalize">Normaliser les flux de contenu</span></span>
+              <label class="switch"><input type="checkbox" id="optNormalize"><i></i></label>
+            </div>
+            <div class="switch-row">
+              <span><span data-i18n="optRemoveUnref">Supprimer les ressources inutilisées</span></span>
+              <label class="switch"><input type="checkbox" id="optRemoveUnref"><i></i></label>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6l-5 3.6 1.9-5.8L4 8.8h6.1z"/></svg>
+          <span data-i18n="tipsTitle">Comment ça marche</span>
+        </h2>
+        <div class="tips">
+          <div class="tip-card">
+            <div class="tip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+            <div><strong data-i18n="tipLocal">100 % local</strong><p data-i18n="tipLocalDesc">Vos PDF ne quittent jamais votre navigateur — aucune donnée envoyée.</p></div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/></svg></div>
+            <div><strong data-i18n="tipEngine">Moteur qpdf 12</strong><p data-i18n="tipEngineDesc">Object streams, recompression des flux, images JPEG, nettoyage des ressources.</p></div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <div><strong data-i18n="tipVerify">Vérification automatique</strong><p data-i18n="tipVerifyDesc">Chaque PDF produit est contrôlé avant téléchargement (lecture intégrale).</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-main">
+      <div class="stats" id="statsBar" hidden>
+        <span class="sum" id="statSum"></span>
+        <span class="saving" id="statSaving" hidden></span>
+        <span class="spacer"></span>
+        <button type="button" class="btn primary small" id="btnProcessAll">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/></svg>
+          <span data-i18n="processAll">Compresser tout</span>
+        </button>
+        <button type="button" class="btn ghost small" id="btnZip" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+          <span data-i18n="downloadAll">Tout télécharger (.zip)</span>
+        </button>
+        <button type="button" class="btn ghost small" id="btnClear">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+          <span data-i18n="clearAll">Vider la liste</span>
+        </button>
+      </div>
+
+      <div class="list" id="fileList"></div>
+
+      <div class="empty" id="emptyState">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        <p data-i18n="emptyText">Aucun fichier pour le moment — ajoutez des PDF pour commencer.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <span>Stever PDF Compress — © 2026 ING STEVER. <span data-i18n="rights">Tous droits réservés.</span> · <a href="https://steverlaabs.github.io/stever-pdf-compress/" target="_blank" rel="noopener" data-i18n="siteLink">Site en ligne</a></span>
+    <span data-i18n="engineCredit">Moteur : qpdf 12 (WebAssembly, Apache-2.0) · fflate (MIT)</span>
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="vendor/fflate.js"></script>
+<script>
+/* ============================================================
+   Stever PDF Compress — application
+   © 2026 ING STEVER — Tous droits réservés.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var APP_VERSION = '1.0.2';
+
+  /* ---------------- i18n ---------------- */
+  var DICT = {
+    fr: {
+      tagline: 'Compression PDF locale — par ING STEVER.',
+      engineLoading: 'Chargement du moteur…',
+      engineReady: 'Moteur qpdf prêt',
+      engineError: 'Moteur indisponible',
+      fileWarn: "Ouvrez cette page via le site en ligne ou un serveur local : le moteur WebAssembly ne fonctionne pas avec le protocole file://.",
+      dropTitle: 'Déposez vos fichiers PDF ici',
+      dropSub: 'Plusieurs fichiers à la fois — compression par lots.',
+      chooseBtn: 'Choisir des fichiers PDF',
+      privacyNote: 'Aucun envoi : tout reste sur votre appareil.',
+      presetTitle: 'Niveau de compression',
+      presetSub: 'Choisissez la qualité souhaitée — les économies sont indicatives.',
+      pLossless: 'Sans perte', pLosslessDesc: 'Structure et flux optimisés, images intactes.',
+      pLight: 'Léger', pLightDesc: 'Images recompressées en qualité élevée (85).',
+      pBalanced: 'Équilibré', pBalancedDesc: 'Bon compromis taille/qualité (70). Idéal documents scannés.',
+      pExtreme: 'Extrême', pExtremeDesc: "Réduction maximale (45) pour l'envoi par e-mail.",
+      recommended: 'conseillé',
+      advTitle: 'Options avancées',
+      qualityLabel: 'Qualité JPEG des images',
+      minAreaLabel: 'Images concernées',
+      areaAll: 'Toutes les images',
+      area64: 'À partir de 64 × 64',
+      area128: 'À partir de 128 × 128',
+      area256: 'À partir de 256 × 256',
+      optImages: 'Recompresser les images (JPEG)',
+      optImagesHint: 'Gain principal sur les documents scannés.',
+      optWeb: 'Optimiser pour le web (linéarisation)',
+      optWebHint: "Ouverture instantanée de la première page.",
+      optObjects: 'Compresser la structure (objets)',
+      optObjectsHint: 'Object streams — gain sur les gros fichiers.',
+      optNormalize: 'Normaliser les flux de contenu',
+      optRemoveUnref: 'Supprimer les ressources inutilisées',
+      tipsTitle: 'Comment ça marche',
+      tipLocal: '100 % local', tipLocalDesc: 'Vos PDF ne quittent jamais votre navigateur — aucune donnée envoyée.',
+      tipEngine: 'Moteur qpdf 12', tipEngineDesc: 'Object streams, recompression des flux, images JPEG, nettoyage des ressources.',
+      tipVerify: 'Vérification automatique', tipVerifyDesc: 'Chaque PDF produit est contrôlé avant téléchargement (lecture intégrale).',
+      processAll: 'Compresser tout',
+      downloadAll: 'Tout télécharger (.zip)',
+      clearAll: 'Vider la liste',
+      emptyText: 'Aucun fichier pour le moment — ajoutez des PDF pour commencer.',
+      rights: 'Tous droits réservés.',
+      siteLink: 'Site en ligne',
+      engineCredit: 'Moteur : qpdf 12 (WebAssembly, Apache-2.0) · fflate (MIT)',
+      statusIdle: 'Prêt',
+      statusInspecting: 'Analyse…',
+      statusWorking: 'Compression…',
+      statusDone: 'Terminé',
+      statusError: 'Erreur',
+      statusLocked: 'Mot de passe requis',
+      pages: 'pages',
+      page: 'page',
+      passwordPh: 'Mot de passe du fichier',
+      passwordHint: 'PDF protégé : saisissez le mot de passe puis compressez.',
+      wrongPassword: 'Mot de passe incorrect.',
+      damaged: 'PDF illisible ou corrompu.',
+      unknownError: 'Échec du traitement. Détails dans la console.',
+      noGain: 'Déjà optimisé : aucun gain supplémentaire.',
+      verified: 'vérifié',
+      notVerified: 'non vérifié',
+      before: 'avant',
+      remove: 'Retirer',
+      download: 'Télécharger',
+      preview: 'Aperçu',
+      compress: 'Compresser',
+      statFiles: 'fichiers',
+      statFile: 'fichier',
+      savings: 'économie',
+      toastAddedSingle: 'Fichier ajouté.',
+      toastAddedMany: '{n} fichiers ajoutés.',
+      toastNotPdf: 'Seuls les fichiers PDF sont acceptés.',
+      toastDone: 'Compression terminée.',
+      toastZipEmpty: 'Aucun résultat à télécharger.',
+      toastCleared: 'Liste vidée.',
+      toastNeedPassword: 'Ce PDF est protégé : saisissez son mot de passe.',
+      toastEngineError: 'Le moteur PDF n\u2019a pas pu être chargé.',
+      zipName: 'stever-pdf-compress',
+      suffix: '-compressé',
+      langCode: 'fr'
+    },
+    ar: {
+      tagline: 'ضغط PDF محلي — من ING STEVER.',
+      engineLoading: 'جارٍ تحميل المحرك…',
+      engineReady: 'محرّك qpdf جاهز',
+      engineError: 'المحرّك غير متوفّر',
+      fileWarn: 'افتح هذه الصفحة عبر الموقع الرسمي أو خادم محلي: محرّك WebAssembly لا يعمل عبر بروتوكول file://.',
+      dropTitle: 'اسحب ملفات PDF وأفلتها هنا',
+      dropSub: 'عدة ملفات في آنٍ واحد — ضغط بالجملة.',
+      chooseBtn: 'اختيار ملفات PDF',
+      privacyNote: 'بدون أي إرسال: كل شيء يبقى على جهازك.',
+      presetTitle: 'مستوى الضغط',
+      presetSub: 'اختر الجودة المطلوبة — نسب التوفير تقديرية.',
+      pLossless: 'بدون فقدان', pLosslessDesc: 'تحسين البنية وإعادة ضغط التدفقات دون المساس بالصور.',
+      pLight: 'خفيف', pLightDesc: 'إعادة ضغط الصور بجودة عالية (85).',
+      pBalanced: 'متوازن', pBalancedDesc: 'أفضل توازن بين الحجم والجودة (70) — مثالي للمستندات الممسوحة.',
+      pExtreme: 'أقصى', pExtremeDesc: 'أقصى تصغير (45) للإرسال عبر البريد الإلكتروني.',
+      recommended: 'مُوصى به',
+      advTitle: 'خيارات متقدمة',
+      qualityLabel: 'جودة JPEG للصور',
+      minAreaLabel: 'الصور المستهدفة',
+      areaAll: 'كل الصور',
+      area64: 'من 64 × 64 وما فوق',
+      area128: 'من 128 × 128 وما فوق',
+      area256: 'من 256 × 256 وما فوق',
+      optImages: 'إعادة ضغط الصور (JPEG)',
+      optImagesHint: 'المكسب الأكبر في المستندات الممسوحة.',
+      optWeb: 'تحسين للويب (Linearisation)',
+      optWebHint: 'فتح فوري للصفحة الأولى عبر الإنترنت.',
+      optObjects: 'ضغط بنية الملف (Object streams)',
+      optObjectsHint: 'مكسب إضافي في الملفات الكبيرة.',
+      optNormalize: 'تطبيع تدفقات المحتوى',
+      optRemoveUnref: 'حذف الموارد غير المستخدمة',
+      tipsTitle: 'كيف يعمل',
+      tipLocal: 'محلي 100%', tipLocalDesc: 'ملفاتك لا تغادر متصفحك أبداً — لا تُرسل أي بيانات.',
+      tipEngine: 'محرّك qpdf 12', tipEngineDesc: 'Object streams، إعادة ضغط التدفقات، ضغط الصور JPEG، وتنظيف الموارد.',
+      tipVerify: 'تحقّق تلقائي', tipVerifyDesc: 'كل ملف ناتج يُفحص قبل التحميل (قراءة كاملة).',
+      processAll: 'ضغط الكل',
+      downloadAll: 'تحميل الكل (.zip)',
+      clearAll: 'تفريغ القائمة',
+      emptyText: 'لا توجد ملفات بعد — أضف ملفات PDF للبدء.',
+      rights: 'جميع الحقوق محفوظة.',
+      siteLink: 'الموقع الرسمي',
+      engineCredit: 'المحرك: qpdf 12 (WebAssembly, Apache-2.0) · fflate (MIT)',
+      statusIdle: 'جاهز',
+      statusInspecting: 'تحليل…',
+      statusWorking: 'جارٍ الضغط…',
+      statusDone: 'تم',
+      statusError: 'فشل',
+      statusLocked: 'يتطلب كلمة سر',
+      pages: 'صفحات',
+      page: 'صفحة',
+      passwordPh: 'كلمة سر الملف',
+      passwordHint: 'ملف محمي: أدخل كلمة السر ثم اضغط ضغط الكل.',
+      wrongPassword: 'كلمة السر غير صحيحة.',
+      damaged: 'ملف PDF غير قابل للقراءة أو تالف.',
+      unknownError: 'تعذّر إتمام المعالجة. التفاصيل في وحدة التحكم.',
+      noGain: 'الملف محسّن مسبقاً: لا مكسب إضافياً.',
+      verified: 'تم التحقق',
+      notVerified: 'غير متحقق',
+      before: 'سابقاً',
+      remove: 'إزالة',
+      download: 'تحميل',
+      preview: 'معاينة',
+      compress: 'ضغط',
+      statFiles: 'ملفات',
+      statFile: 'ملف',
+      savings: 'توفير',
+      toastAddedSingle: 'تمت إضافة الملف.',
+      toastAddedMany: 'تمت إضافة {n} ملفات.',
+      toastNotPdf: 'يُقبل فقط ملفات PDF.',
+      toastDone: 'اكتمل الضغط.',
+      toastZipEmpty: 'لا توجد نتائج للتحميل.',
+      toastCleared: 'تم تفريغ القائمة.',
+      toastNeedPassword: 'هذا الملف محمي: أدخل كلمة السر أولاً.',
+      toastEngineError: 'تعذّر تحميل محرّك PDF.',
+      zipName: 'stever-pdf-compress',
+      suffix: '-مضغوط',
+      langCode: 'ar'
+    }
+  };
+
+  var lang = 'fr';
+  var t = function (key) { return (DICT[lang] && DICT[lang][key]) || DICT.fr[key] || key; };
+
+  /* ---------------- Utilitaires ---------------- */
+  var $ = function (sel, root) { return (root || document).querySelector(sel); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+
+  function fmtSize(bytes) {
+    if (bytes === null || bytes === undefined) return '—';
+    var units = lang === 'ar' ? ['بايت', 'ك.ب', 'م.ب', 'ج.ب'] : ['o', 'Ko', 'Mo', 'Go'];
+    var index = 0; var value = bytes;
+    while (value >= 1024 && index < units.length - 1) { value /= 1024; index += 1; }
+    var locale = lang === 'ar' ? 'ar-DZ' : 'fr-FR';
+    var rounded = value >= 100 || index === 0 ? Math.round(value) : Math.round(value * 10) / 10;
+    return rounded.toLocaleString(locale) + ' ' + units[index];
+  }
+  function fmtPercent(value) {
+    var locale = lang === 'ar' ? 'ar-DZ' : 'fr-FR';
+    return Math.round(value).toLocaleString(locale) + ' %';
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  var toastTimer = null;
+  function toast(message) {
+    var el = $('#toast');
+    el.textContent = message;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 3400);
+  }
+
+  /* ---------------- Réglages ---------------- */
+  var STORAGE_KEY = 'stever-pdf-compress.v1';
+  var PRESETS = {
+    lossless: { optimizeImages: false, jpegQuality: null, minArea: null, preset: 'lossless' },
+    light: { optimizeImages: true, jpegQuality: 85, minArea: 65536, preset: 'light' },
+    balanced: { optimizeImages: true, jpegQuality: 70, minArea: 16384, preset: 'balanced' },
+    extreme: { optimizeImages: true, jpegQuality: 45, minArea: 4096, preset: 'extreme' }
+  };
+  var settings = {
+    preset: 'balanced',
+    optimizeImages: true,
+    jpegQuality: 70,
+    minArea: 16384,
+    linearize: false,
+    objectStreams: true,
+    normalize: true,
+    removeUnref: true
+  };
+  function loadSettings() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      var saved = JSON.parse(raw);
+      if (saved && typeof saved === 'object') {
+        Object.keys(settings).forEach(function (key) {
+          if (saved[key] !== undefined) settings[key] = saved[key];
+        });
+      }
+      var savedLang = localStorage.getItem(STORAGE_KEY + '.lang');
+      if (savedLang === 'fr' || savedLang === 'ar') lang = savedLang;
+    } catch (err) { /* stockage indisponible */ }
+  }
+  function saveSettings() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      localStorage.setItem(STORAGE_KEY + '.lang', lang);
+    } catch (err) { /* ignore */ }
+  }
+
+  /* ---------------- État ---------------- */
+  var files = [];
+  var seqFile = 0;
+  var processing = false;
+  var workerReady = false;
+  var lastFeatures = null;
+
+  /* ---------------- Worker ---------------- */
+  var worker = null;
+  var rpcSeq = 0;
+  var pending = new Map();
+
+  function ensureWorker() {
+    if (worker) return worker;
+    worker = new Worker('worker/pdf-worker.js?v=' + APP_VERSION);
+    worker.onmessage = function (event) {
+      var data = event.data || {};
+      var entry = pending.get(data.id);
+      if (!entry) return;
+      pending.delete(data.id);
+      if (data.ok) entry.resolve(data);
+      else entry.reject(Object.assign(new Error(data.error || 'worker-error'), { kind: data.errorKind }));
+    };
+    worker.onerror = function () {
+      pending.forEach(function (entry) { entry.reject(new Error('worker-crash')); });
+      pending.clear();
+      workerReady = false;
+      setEngineState('error');
+    };
+    return worker;
+  }
+
+  function rpc(op, payload, transfer) {
+    return new Promise(function (resolve, reject) {
+      var id = ++rpcSeq;
+      pending.set(id, { resolve: resolve, reject: reject });
+      var message = Object.assign({ id: id, op: op }, payload || {});
+      try {
+        ensureWorker().postMessage(message, transfer || []);
+      } catch (err) {
+        pending.delete(id);
+        reject(err);
+      }
+    });
+  }
+
+  function setEngineState(state) {
+    var el = $('#engineStatus');
+    el.classList.remove('ready', 'error');
+    var label = $('span', el);
+    if (state === 'ready') { el.classList.add('ready'); label.textContent = t('engineReady'); label.setAttribute('data-i18n', 'engineReady'); }
+    else if (state === 'error') { el.classList.add('error'); label.textContent = t('engineError'); label.setAttribute('data-i18n', 'engineError'); }
+    else { label.textContent = t('engineLoading'); label.setAttribute('data-i18n', 'engineLoading'); }
+  }
+
+  function initEngine() {
+    setEngineState('loading');
+    rpc('init', {}, []).then(function (data) {
+      workerReady = true;
+      lastFeatures = data.features || null;
+      setEngineState('ready');
+      if (data.features && data.features.optimizeImages === false) {
+        settings.optimizeImages = false;
+        syncSettingsUI();
+      }
+    }).catch(function () {
+      workerReady = false;
+      setEngineState('error');
+      toast(t('toastEngineError'));
+    });
+  }
+
+  /* ---------------- Langue ---------------- */
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+    document.title = lang === 'ar'
+      ? 'Stever PDF Compress — ضغط ملفات PDF محلياً'
+      : 'Stever PDF Compress — Compressez vos PDF en local';
+    $$('[data-i18n]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n');
+      if (DICT[lang][key] !== undefined) el.textContent = DICT[lang][key];
+    });
+    $$('[data-i18n-ph]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n-ph');
+      if (DICT[lang][key] !== undefined) el.setAttribute('placeholder', DICT[lang][key]);
+    });
+    $$('.lang-switch button').forEach(function (btn) {
+      btn.classList.toggle('on', btn.getAttribute('data-lang') === lang);
+    });
+    files.forEach(updateRow);
+    updateStats();
+    setEngineState(workerReady ? 'ready' : ($('#engineStatus').classList.contains('error') ? 'error' : 'loading'));
+  }
+
+  /* ---------------- Ajout de fichiers ---------------- */
+  function isPdf(file) {
+    return (file.type === 'application/pdf') || /\.pdf$/i.test(file.name || '');
+  }
+
+  function addFiles(list) {
+    var incoming = Array.prototype.slice.call(list || []);
+    var pdfs = incoming.filter(isPdf);
+    if (!pdfs.length) {
+      if (incoming.length) toast(t('toastNotPdf'));
+      return;
+    }
+    pdfs.forEach(function (file) {
+      var item = {
+        id: ++seqFile,
+        file: file,
+        name: file.name,
+        size: file.size,
+        pages: null,
+        encrypted: false,
+        needsPassword: false,
+        password: '',
+        status: 'inspecting',
+        errorText: '',
+        errorKind: null,
+        outBlob: null,
+        outBytes: 0,
+        resultUrl: null,
+        verified: null,
+        noGain: false,
+        mode: null
+      };
+      files.push(item);
+      renderRow(item);
+      inspectItem(item);
+    });
+    toast(pdfs.length === 1 ? t('toastAddedSingle') : t('toastAddedMany').replace('{n}', pdfs.length));
+    updateStats();
+  }
+
+  function inspectItem(item) {
+    item.file.arrayBuffer().then(function (buffer) {
+      return rpc('inspect', { bytes: buffer }, [buffer]);
+    }).then(function (data) {
+      var info = data.info || {};
+      item.pages = info.pages;
+      item.encrypted = !!info.encrypted;
+      item.needsPassword = !!info.needsPassword;
+      if (info.damaged) {
+        item.status = 'error';
+        item.errorKind = 'damaged';
+        item.errorText = t('damaged');
+      } else if (item.needsPassword) {
+        item.status = 'locked';
+      } else {
+        item.status = 'idle';
+      }
+      updateRow(item);
+      updateStats();
+    }).catch(function () {
+      item.status = 'idle';
+      updateRow(item);
+      updateStats();
+    });
+  }
+
+  /* ---------------- Traitement ---------------- */
+  function processable(item) {
+    if (item.status === 'idle') return true;
+    if (item.status === 'locked' && item.password) return true;
+    if (item.status === 'error' && item.errorKind !== 'damaged') return true;
+    return false;
+  }
+
+  function processItem(item) {
+    return new Promise(function (resolve) {
+      if (!workerReady) { toast(t('toastEngineError')); resolve(false); return; }
+      if (item.needsPassword && !item.password) {
+        toast(t('toastNeedPassword'));
+        var input = $('.pwd-row input', rowEls.get(item.id));
+        if (input) input.focus();
+        resolve(false);
+        return;
+      }
+      item.status = 'working';
+      item.errorText = '';
+      item.errorKind = null;
+      updateRow(item);
+
+      item.file.arrayBuffer().then(function (buffer) {
+        var options = {
+          optimizeImages: !!settings.optimizeImages,
+          jpegQuality: settings.jpegQuality,
+          minArea: settings.minArea,
+          linearize: !!settings.linearize,
+          objectStreams: !!settings.objectStreams,
+          normalize: !!settings.normalize,
+          removeUnref: !!settings.removeUnref,
+          decrypt: !!item.encrypted,
+          password: item.password || null
+        };
+        return rpc('process', { bytes: buffer, options: options }, [buffer]);
+      }).then(function (data) {
+        var blob = new Blob([data.outBytes], { type: 'application/pdf' });
+        item.outBlob = blob;
+        item.outBytes = blob.size;
+        item.verified = !!(data.verify && data.verify.valid);
+        item.mode = data.mode;
+        if (data.pages) item.pages = data.pages;
+        item.noGain = blob.size >= item.size;
+        item.status = 'done';
+        revokeItemUrl(item);
+        updateRow(item);
+        updateStats();
+        resolve(true);
+      }).catch(function (err) {
+        var kind = (err && err.kind) || 'failed';
+        if (kind === 'failed' && item.encrypted && item.password) kind = 'bad-password';
+        if (kind === 'bad-password') {
+          item.status = 'locked';
+          item.errorKind = 'bad-password';
+          item.errorText = t('wrongPassword');
+        } else {
+          item.status = 'error';
+          item.errorKind = kind || 'failed';
+          item.errorText = kind === 'damaged' ? t('damaged') : t('unknownError');
+        }
+        if (err) console.warn('Stever PDF Compress:', err.message || err, item.name);
+        updateRow(item);
+        updateStats();
+        resolve(false);
+      });
+    });
+  }
+
+  function processAll() {
+    if (processing) return;
+    var queue = files.filter(processable);
+    if (!queue.length) return;
+    processing = true;
+    updateStats();
+    var index = 0;
+    var next = function () {
+      if (index >= queue.length) {
+        processing = false;
+        updateStats();
+        toast(t('toastDone'));
+        return;
+      }
+      var item = queue[index++];
+      processItem(item).then(function () { setTimeout(next, 30); });
+    };
+    next();
+  }
+
+  /* ---------------- Rendu ---------------- */
+  var rowEls = new Map();
+  var ICONS = {
+    file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
+    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>',
+    play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/></svg>'
+  };
+
+  function renderRow(item) {
+    var card = document.createElement('article');
+    card.className = 'file-card';
+    card.dataset.id = item.id;
+    card.innerHTML =
+      '<div class="file-main">' +
+        '<div class="file-icon">' + ICONS.file + '</div>' +
+        '<div class="file-info">' +
+          '<div class="file-name" title="' + escapeHtml(item.name) + '">' + escapeHtml(item.name) + '</div>' +
+          '<div class="file-sub"></div>' +
+          '<div class="file-result" hidden></div>' +
+          '<div class="file-error" hidden></div>' +
+          '<div class="progress" hidden><i></i></div>' +
+        '</div>' +
+        '<div class="file-side">' +
+          '<span class="badge status"></span>' +
+          '<div class="row-actions">' +
+            '<button type="button" class="mini-btn" data-act="compress" title="' + t('compress') + '">' + ICONS.play + '</button>' +
+            '<button type="button" class="mini-btn" data-act="preview" title="' + t('preview') + '" hidden>' + ICONS.eye + '</button>' +
+            '<button type="button" class="mini-btn" data-act="download" title="' + t('download') + '" hidden>' + ICONS.download + '</button>' +
+            '<button type="button" class="mini-btn" data-act="remove" title="' + t('remove') + '">' + ICONS.trash + '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="pwd-row" hidden>' +
+        '<input type="password" data-i18n-ph="passwordPh" placeholder="' + t('passwordPh') + '" autocomplete="off" spellcheck="false">' +
+        '<span class="hint" data-i18n="passwordHint">' + t('passwordHint') + '</span>' +
+      '</div>';
+
+    $('#fileList').appendChild(card);
+    var refs = {
+      card: card,
+      sub: $('.file-sub', card),
+      result: $('.file-result', card),
+      error: $('.file-error', card),
+      progress: $('.progress', card),
+      badge: $('.badge', card),
+      btnCompress: $('[data-act="compress"]', card),
+      btnPreview: $('[data-act="preview"]', card),
+      btnDownload: $('[data-act="download"]', card),
+      btnRemove: $('[data-act="remove"]', card),
+      pwdRow: $('.pwd-row', card),
+      pwdInput: $('.pwd-row input', card)
+    };
+    rowEls.set(item.id, refs);
+
+    refs.btnRemove.addEventListener('click', function () { removeItem(item.id); });
+    refs.btnCompress.addEventListener('click', function () { processItem(item); });
+    refs.btnDownload.addEventListener('click', function () { downloadItem(item); });
+    refs.btnPreview.addEventListener('click', function () { previewItem(item); });
+    refs.pwdInput.addEventListener('input', function () {
+      item.password = refs.pwdInput.value;
+      if (item.status === 'locked' && item.errorKind === 'bad-password') {
+        item.errorKind = null;
+        item.errorText = '';
+        updateRow(item);
+      }
+      updateStats();
+    });
+
+    updateRow(item);
+    $('#emptyState').hidden = files.length > 0;
+    $('#statsBar').hidden = files.length === 0;
+  }
+
+  function updateRow(item) {
+    var refs = rowEls.get(item.id);
+    if (!refs) return;
+    var card = refs.card;
+    card.classList.remove('working', 'done', 'error');
+    refs.badge.className = 'badge status';
+
+    var subParts = [fmtSize(item.size)];
+    if (item.pages) subParts.push(item.pages + ' ' + (item.pages > 1 ? t('pages') : t('page')));
+    refs.sub.textContent = subParts.join(' · ');
+
+    refs.progress.hidden = true;
+    refs.error.hidden = true;
+    refs.result.hidden = true;
+    refs.btnDownload.hidden = true;
+    refs.btnPreview.hidden = true;
+    refs.btnCompress.hidden = false;
+
+    if (item.status === 'inspecting') {
+      refs.badge.textContent = t('statusInspecting');
+      refs.progress.hidden = false;
+    } else if (item.status === 'working') {
+      card.classList.add('working');
+      refs.badge.classList.add('working');
+      refs.badge.textContent = t('statusWorking');
+      refs.progress.hidden = false;
+      refs.btnCompress.disabled = true;
+    } else if (item.status === 'done') {
+      card.classList.add('done');
+      refs.badge.classList.add('done');
+      refs.badge.textContent = t('statusDone');
+      refs.btnCompress.disabled = false;
+      refs.btnDownload.hidden = false;
+      refs.btnPreview.hidden = false;
+      var gain = item.size > 0 ? Math.round((1 - item.outBytes / item.size) * 100) : 0;
+      var gainHtml;
+      if (gain > 0) gainHtml = '<span class="gain">−' + fmtPercent(gain) + '</span>';
+      else if (gain === 0) gainHtml = '<span class="flat">' + fmtPercent(0) + '</span>';
+      else gainHtml = '<span class="flat">+' + fmtPercent(-gain) + '</span>';
+      var verifyHtml = item.verified
+        ? ' · <span class="ok">' + t('verified') + ' ✓</span>'
+        : ' · ' + t('notVerified');
+      var flatNote = item.noGain ? ' · ' + t('noGain') : '';
+      refs.result.innerHTML =
+        fmtSize(item.size) + ' → <b>' + fmtSize(item.outBytes) + '</b> · ' + gainHtml + verifyHtml + flatNote;
+      refs.result.hidden = false;
+    } else if (item.status === 'error') {
+      card.classList.add('error');
+      refs.badge.classList.add('error');
+      refs.badge.textContent = t('statusError');
+      refs.error.textContent = item.errorText || t('unknownError');
+      refs.error.hidden = false;
+      refs.btnCompress.disabled = item.errorKind === 'damaged';
+    } else if (item.status === 'locked') {
+      refs.badge.classList.add('lock');
+      refs.badge.textContent = t('statusLocked');
+      if (item.errorText) { refs.error.textContent = item.errorText; refs.error.hidden = false; }
+    } else {
+      refs.badge.textContent = t('statusIdle');
+    }
+    refs.pwdRow.hidden = !item.needsPassword;
+    if (item.needsPassword && refs.pwdInput.value !== item.password) refs.pwdInput.value = item.password;
+  }
+
+  function removeItem(id) {
+    var index = files.findIndex(function (f) { return f.id === id; });
+    if (index === -1) return;
+    var item = files[index];
+    revokeItemUrl(item);
+    files.splice(index, 1);
+    var refs = rowEls.get(id);
+    if (refs) { refs.card.remove(); rowEls.delete(id); }
+    $('#emptyState').hidden = files.length > 0;
+    $('#statsBar').hidden = files.length === 0;
+    updateStats();
+  }
+
+  function revokeItemUrl(item) {
+    if (item.resultUrl) { URL.revokeObjectURL(item.resultUrl); item.resultUrl = null; }
+  }
+
+  function clearAll() {
+    files.forEach(revokeItemUrl);
+    files = [];
+    rowEls.forEach(function (refs) { refs.card.remove(); });
+    rowEls.clear();
+    $('#emptyState').hidden = false;
+    $('#statsBar').hidden = true;
+    updateStats();
+    toast(t('toastCleared'));
+  }
+
+  /* ---------------- Statistiques ---------------- */
+  function updateStats() {
+    var bar = $('#statsBar');
+    if (!files.length) { bar.hidden = true; $('#btnZip').disabled = true; return; }
+    bar.hidden = false;
+    var totalIn = files.reduce(function (sum, f) { return sum + f.size; }, 0);
+    var doneItems = files.filter(function (f) { return f.status === 'done'; });
+    var totalOut = doneItems.reduce(function (sum, f) { return sum + f.outBytes; }, 0);
+    var summary = files.length + ' ' + (files.length > 1 ? t('statFiles') : t('statFile')) + ' · ' + fmtSize(totalIn);
+    if (doneItems.length) summary += ' → ' + fmtSize(totalOut);
+    $('#statSum').innerHTML = summary;
+    var savingEl = $('#statSaving');
+    if (doneItems.length && totalIn > 0) {
+      var gain = Math.round((1 - totalOut / totalIn) * 100);
+      savingEl.textContent = (gain >= 0 ? '−' + fmtPercent(gain) : '+' + fmtPercent(-gain)) + ' ' + t('savings');
+      savingEl.hidden = false;
+    } else {
+      savingEl.hidden = true;
+    }
+    $('#btnZip').disabled = doneItems.length === 0;
+    $('#btnProcessAll').disabled = processing || !files.some(processable);
+  }
+
+  /* ---------------- Téléchargements ---------------- */
+  function downloadBlob(blob, name) {
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+  function outName(item) {
+    return item.name.replace(/\.pdf$/i, '') + t('suffix') + '.pdf';
+  }
+  function downloadItem(item) {
+    if (!item.outBlob) return;
+    downloadBlob(item.outBlob, outName(item));
+  }
+  function previewItem(item) {
+    if (!item.outBlob) return;
+    revokeItemUrl(item);
+    item.resultUrl = URL.createObjectURL(item.outBlob);
+    window.open(item.resultUrl, '_blank');
+  }
+
+  function downloadZip() {
+    var doneItems = files.filter(function (f) { return f.status === 'done' && f.outBlob; });
+    if (!doneItems.length) { toast(t('toastZipEmpty')); return; }
+    if (typeof fflate === 'undefined') { doneItems.forEach(downloadItem); return; }
+    Promise.all(doneItems.map(function (item) { return item.outBlob.arrayBuffer(); })).then(function (buffers) {
+      var entries = {};
+      var used = {};
+      doneItems.forEach(function (item, index) {
+        var name = outName(item);
+        if (used[name]) { used[name] += 1; name = name.replace(/\.pdf$/i, '-' + used[name] + '.pdf'); }
+        else used[name] = 1;
+        entries[name] = [new Uint8Array(buffers[index]), { level: 0 }];
+      });
+      var zipped = fflate.zipSync(entries, { level: 0 });
+      var stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      downloadBlob(new Blob([zipped], { type: 'application/zip' }), t('zipName') + '-' + stamp + '.zip');
+    }).catch(function (err) {
+      console.warn('ZIP:', err);
+      doneItems.forEach(downloadItem);
+    });
+  }
+
+  /* ---------------- Réglages UI ---------------- */
+  function syncSettingsUI() {
+    var presetId = settings.preset;
+    $$('.preset').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-preset') === presetId);
+    });
+    $('#qualityRange').value = String(settings.jpegQuality || 70);
+    $('#qualityVal').textContent = String(settings.jpegQuality || 70);
+    $('#qualityRange').disabled = !settings.optimizeImages;
+    $('#qualityVal').style.opacity = settings.optimizeImages ? '1' : '.4';
+    $('#minAreaSelect').value = String(settings.minArea === null ? 16384 : settings.minArea);
+    $('#minAreaSelect').disabled = !settings.optimizeImages;
+    $('#optImages').checked = !!settings.optimizeImages;
+    $('#optWeb').checked = !!settings.linearize;
+    $('#optObjects').checked = !!settings.objectStreams;
+    $('#optNormalize').checked = !!settings.normalize;
+    $('#optRemoveUnref').checked = !!settings.removeUnref;
+  }
+
+  function wireSettings() {
+    $$('.preset').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var preset = PRESETS[btn.getAttribute('data-preset')];
+        if (!preset) return;
+        Object.assign(settings, preset);
+        if (!settings.optimizeImages) {
+          settings.jpegQuality = settings.jpegQuality || 70;
+        }
+        syncSettingsUI();
+        saveSettings();
+        updateStats();
+      });
+    });
+    $('#qualityRange').addEventListener('input', function () {
+      settings.jpegQuality = parseInt(this.value, 10);
+      settings.preset = 'custom';
+      $('#qualityVal').textContent = String(settings.jpegQuality);
+      $$('.preset').forEach(function (b) { b.classList.remove('active'); });
+      saveSettings();
+    });
+    $('#minAreaSelect').addEventListener('change', function () {
+      settings.minArea = parseInt(this.value, 10);
+      settings.preset = 'custom';
+      $$('.preset').forEach(function (b) { b.classList.remove('active'); });
+      saveSettings();
+    });
+    $('#optImages').addEventListener('change', function () {
+      settings.optimizeImages = this.checked;
+      syncSettingsUI();
+      saveSettings();
+    });
+    $('#optWeb').addEventListener('change', function () { settings.linearize = this.checked; saveSettings(); });
+    $('#optObjects').addEventListener('change', function () { settings.objectStreams = this.checked; saveSettings(); });
+    $('#optNormalize').addEventListener('change', function () { settings.normalize = this.checked; saveSettings(); });
+    $('#optRemoveUnref').addEventListener('change', function () { settings.removeUnref = this.checked; saveSettings(); });
+  }
+
+  /* ---------------- Événements ---------------- */
+  function wireEvents() {
+    var dz = $('#dropzone');
+    var input = $('#fileInput');
+    $('#pickBtn').addEventListener('click', function (event) { event.stopPropagation(); input.click(); });
+    dz.addEventListener('click', function () { input.click(); });
+    dz.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); input.click(); }
+    });
+    input.addEventListener('change', function () { addFiles(input.files); input.value = ''; });
+    ['dragenter', 'dragover'].forEach(function (type) {
+      dz.addEventListener(type, function (event) { event.preventDefault(); dz.classList.add('hover'); });
+    });
+    ['dragleave', 'drop'].forEach(function (type) {
+      dz.addEventListener(type, function (event) { event.preventDefault(); dz.classList.remove('hover'); });
+    });
+    dz.addEventListener('drop', function (event) {
+      if (event.dataTransfer && event.dataTransfer.files) addFiles(event.dataTransfer.files);
+    });
+    window.addEventListener('dragover', function (e) { e.preventDefault(); });
+    window.addEventListener('drop', function (e) { e.preventDefault(); });
+
+    $('#btnProcessAll').addEventListener('click', processAll);
+    $('#btnZip').addEventListener('click', downloadZip);
+    $('#btnClear').addEventListener('click', clearAll);
+
+    $$('.lang-switch button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        lang = btn.getAttribute('data-lang');
+        saveSettings();
+        applyLang();
+      });
+    });
+
+    if (location.protocol === 'file:') $('#fileWarn').classList.add('show');
+  }
+
+  /* ---------------- Démarrage ---------------- */
+  loadSettings();
+  syncSettingsUI();
+  wireSettings();
+  wireEvents();
+  applyLang();
+  initEngine();
+
+  /* Interface de test (QA) */
+  window.__SPC_QA__ = {
+    rpc: rpc,
+    get files() { return files; },
+    get features() { return lastFeatures; },
+    addTest: function (name, bytes) {
+      var file = new File([bytes], name, { type: 'application/pdf' });
+      addFiles([file]);
+    },
+    processAll: processAll,
+    settings: settings,
+    setWorkerReady: function (v) { workerReady = v; }
+  };
+})();
+</script>
+</body>
+</html>
