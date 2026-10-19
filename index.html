@@ -278,6 +278,14 @@
   .file-result .flat{ color: var(--amber); font-weight: 700; }
   .file-result .ok{ color: var(--green); }
   .file-error{ font-size: 11.6px; margin-top: 4px; color: var(--red); }
+  .suggest{
+    margin-top: 7px; display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer;
+    border: 1px solid rgba(34, 211, 238, .42); background: rgba(8, 145, 178, .13);
+    color: #7dd3fc; font: 700 11.8px/1.25 inherit; font-family: inherit;
+    transition: background .15s, border-color .15s;
+  }
+  .suggest:hover{ background: rgba(8, 145, 178, .24); border-color: rgba(34, 211, 238, .72); }
   .file-side{ display: flex; flex-direction: column; align-items: flex-end; gap: 7px; flex: 0 0 auto; }
   .badge{
     font-size: 10.6px; font-weight: 700; letter-spacing: .02em; border-radius: 999px; padding: 3px 10px;
@@ -429,7 +437,7 @@
           <div class="adv-body">
             <div class="adv-row">
               <span class="lbl"><span data-i18n="qualityLabel">Qualité JPEG des images</span><b id="qualityVal">70</b></span>
-              <input type="range" id="qualityRange" min="30" max="95" step="5" value="70">
+              <input type="range" id="qualityRange" min="15" max="95" step="5" value="70">
             </div>
             <div class="adv-row">
               <span class="lbl"><span data-i18n="minAreaLabel">Images concernées</span></span>
@@ -531,7 +539,7 @@
 (function () {
   'use strict';
 
-  var APP_VERSION = '1.0.3';
+  var APP_VERSION = '1.0.4';
 
   /* ---------------- i18n ---------------- */
   var DICT = {
@@ -592,6 +600,7 @@
       damaged: 'PDF illisible ou corrompu.',
       unknownError: 'Échec du traitement. Détails dans la console.',
       noGain: 'Déjà optimisé : gain négligeable (< 1 %).',
+      suggestQuality: 'Réessayer en qualité {q} → ≈ {gain} % de gain',
       verified: 'vérifié',
       notVerified: 'non vérifié',
       before: 'avant',
@@ -608,6 +617,7 @@
       toastDone: 'Compression terminée.',
       toastZipEmpty: 'Aucun résultat à télécharger.',
       toastCleared: 'Liste vidée.',
+      toastHint: 'Qualité réglée sur {q} — recompression…',
       toastNeedPassword: 'Ce PDF est protégé : saisissez son mot de passe.',
       toastEngineError: 'Le moteur PDF n\u2019a pas pu être chargé.',
       zipName: 'stever-pdf-compress',
@@ -671,6 +681,7 @@
       damaged: 'ملف PDF غير قابل للقراءة أو تالف.',
       unknownError: 'تعذّر إتمام المعالجة. التفاصيل في وحدة التحكم.',
       noGain: 'الملف مُحسَّن مسبقاً — التوفير ضئيل (أقل من 1%).',
+      suggestQuality: 'أعد المحاولة بجودة {q} → توفير ≈ {gain}%',
       verified: 'تم التحقق',
       notVerified: 'غير متحقق',
       before: 'سابقاً',
@@ -687,6 +698,7 @@
       toastDone: 'اكتمل الضغط.',
       toastZipEmpty: 'لا توجد نتائج للتحميل.',
       toastCleared: 'تم تفريغ القائمة.',
+      toastHint: 'تم ضبط الجودة على {q} — إعادة الضغط…',
       toastNeedPassword: 'هذا الملف محمي: أدخل كلمة السر أولاً.',
       toastEngineError: 'تعذّر تحميل محرّك PDF.',
       zipName: 'stever-pdf-compress',
@@ -951,6 +963,7 @@
       item.status = 'working';
       item.errorText = '';
       item.errorKind = null;
+      item.hint = null;
       updateRow(item);
 
       item.file.arrayBuffer().then(function (buffer) {
@@ -973,7 +986,7 @@
         item.verified = !!(data.verify && data.verify.valid);
         item.mode = data.mode;
         if (data.pages) item.pages = data.pages;
-        if (item.size > 0 && blob.size / item.size >= 0.99) item.noGain = true;
+        item.noGain = item.size > 0 && blob.size / item.size >= 0.99;
         if (blob.size >= item.size && !item.encrypted) {
           /* Jamais de fichier plus gros : on propose l'original. */
           item.outBlob = item.file;
@@ -983,6 +996,7 @@
         revokeItemUrl(item);
         updateRow(item);
         updateStats();
+        if (item.noGain && !item.encrypted) probeHint(item);
         resolve(true);
       }).catch(function (err) {
         var kind = (err && err.kind) || 'failed';
@@ -1002,6 +1016,50 @@
         resolve(false);
       });
     });
+  }
+
+  /* Sonde silencieuse : si le fichier ne gagne rien aux réglages actuels,
+     on teste la qualité 25 pour proposer une reprise en un clic. */
+  function probeHint(item) {
+    if (!settings.optimizeImages || !(settings.jpegQuality > 25)) return;
+    if (item.size > 40 * 1024 * 1024) return;
+    item.probeSeq = (item.probeSeq || 0) + 1;
+    var runId = item.probeSeq;
+    item.file.arrayBuffer().then(function (buffer) {
+      var options = {
+        optimizeImages: true,
+        jpegQuality: 25,
+        minArea: 0,
+        linearize: !!settings.linearize,
+        objectStreams: !!settings.objectStreams,
+        normalize: !!settings.normalize,
+        removeUnref: !!settings.removeUnref,
+        decrypt: false,
+        password: null
+      };
+      return rpc('process', { bytes: buffer, options: options }, [buffer]);
+    }).then(function (data) {
+      if (item.probeSeq !== runId || item.status !== 'done' || !rowEls.has(item.id)) return;
+      var size = data.outBytes ? data.outBytes.byteLength : 0;
+      if (!size) return;
+      var gain = (1 - size / item.size) * 100;
+      if (gain >= 5) {
+        item.hint = { q: 25, gain: Math.round(gain) };
+        updateRow(item);
+      }
+    }).catch(function () { /* sonde muette */ });
+  }
+
+  function applyHint(item) {
+    if (!item.hint) return;
+    settings.jpegQuality = item.hint.q;
+    settings.optimizeImages = true;
+    settings.preset = 'custom';
+    item.hint = null;
+    syncSettingsUI();
+    saveSettings();
+    toast(t('toastHint').replace('{q}', settings.jpegQuality));
+    processItem(item);
   }
 
   function processAll() {
@@ -1045,6 +1103,7 @@
           '<div class="file-name" title="' + escapeHtml(item.name) + '">' + escapeHtml(item.name) + '</div>' +
           '<div class="file-sub"></div>' +
           '<div class="file-result" hidden></div>' +
+          '<button type="button" class="suggest" hidden></button>' +
           '<div class="file-error" hidden></div>' +
           '<div class="progress" hidden><i></i></div>' +
         '</div>' +
@@ -1068,6 +1127,7 @@
       card: card,
       sub: $('.file-sub', card),
       result: $('.file-result', card),
+      suggest: $('.suggest', card),
       error: $('.file-error', card),
       progress: $('.progress', card),
       badge: $('.badge', card),
@@ -1093,6 +1153,7 @@
       }
       updateStats();
     });
+    refs.suggest.addEventListener('click', function () { applyHint(item); });
 
     updateRow(item);
     $('#emptyState').hidden = files.length > 0;
@@ -1113,6 +1174,7 @@
     refs.progress.hidden = true;
     refs.error.hidden = true;
     refs.result.hidden = true;
+    refs.suggest.hidden = true;
     refs.btnDownload.hidden = true;
     refs.btnPreview.hidden = true;
     refs.btnCompress.hidden = false;
@@ -1145,6 +1207,12 @@
       refs.result.innerHTML =
         fmtSize(item.size) + ' → <b>' + fmtSize(item.outBytes) + '</b> · ' + gainHtml + verifyHtml + flatNote;
       refs.result.hidden = false;
+      refs.suggest.hidden = !item.hint;
+      if (item.hint) {
+        refs.suggest.textContent = t('suggestQuality')
+          .replace('{q}', item.hint.q)
+          .replace('{gain}', item.hint.gain);
+      }
     } else if (item.status === 'error') {
       card.classList.add('error');
       refs.badge.classList.add('error');
