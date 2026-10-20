@@ -1,31 +1,31 @@
 <p align="center">
-  <img src="logo.svg" alt="Stever PDF Compress â€” ING STEVER" width="460">
+  <img src="logo.svg" alt="Stever PDF Compress — ING STEVER" width="460">
 </p>
 
 # Stever PDF Compress
 
-Compresseur de fichiers PDF **100 % local** : l'application s'exÃ©cute entiÃ¨rement dans le navigateur, sans serveur, sans compte et sans envoi de vos documents. Le moteur est **qpdf 12 compilÃ© en WebAssembly**, embarquÃ© directement dans cette page HTML unique.
+Compresseur de fichiers PDF **100 % local** : l'application s'exécute entièrement dans le navigateur, sans serveur, sans compte et sans envoi de vos documents. Le moteur est **qpdf 12 compilé en WebAssembly**, embarqué directement dans cette page HTML unique.
 
-ðŸŒ **Site en ligne :** <https://steverlaabs.github.io/stever-pdf-compress/>
+🌐 **Site en ligne :** <https://steverlaabs.github.io/stever-pdf-compress/>
 
-## FonctionnalitÃ©s
+## Fonctionnalités
 
-- **Compression par lots** : glissez-dÃ©posez plusieurs PDF, traitez-les en une fois.
-- **4 niveaux de compression** : sans perte, lÃ©ger, Ã©quilibrÃ©, extrÃªme.
-- **RÃ©glages avancÃ©s** : qualitÃ© JPEG, taille minimale des images ciblÃ©es, object streams, normalisation des flux, suppression des ressources inutilisÃ©es, linÃ©arisation web.
-- **Documents protÃ©gÃ©s** : dÃ©tection automatique, dÃ©chiffrement avec le mot de passe fourni par l'utilisateur.
-- **VÃ©rification automatique** : chaque PDF produit est relu et contrÃ´lÃ© (`qpdf --check`) avant tÃ©lÃ©chargement.
-- **Comparaison avant/aprÃ¨s** : taille, pourcentage d'Ã©conomie, total du lot.
-- **TÃ©lÃ©chargement individuel ou archive ZIP** de tous les rÃ©sultats.
-- **Interface bilingue franÃ§ais / arabe** avec support complet de la direction droite-Ã -gauche (RTL).
-- **Aucune donnÃ©e envoyÃ©e** : tout le traitement est effectuÃ© sur l'appareil.
+- **Compression par lots** : glissez-déposez plusieurs PDF, traitez-les en une fois.
+- **4 niveaux de compression** : sans perte, léger, équilibré, extrême.
+- **Réglages avancés** : qualité JPEG, taille minimale des images ciblées, object streams, normalisation des flux, suppression des ressources inutilisées, linéarisation web.
+- **Documents protégés** : détection automatique, déchiffrement avec le mot de passe fourni par l'utilisateur.
+- **Vérification automatique** : chaque PDF produit est relu et contrôlé (`qpdf --check`) avant téléchargement.
+- **Comparaison avant/après** : taille, pourcentage d'économie, total du lot.
+- **Téléchargement individuel ou archive ZIP** de tous les résultats.
+- **Interface bilingue français / arabe** avec support complet de la direction droite-à-gauche (RTL).
+- **Aucune donnée envoyée** : tout le traitement est effectué sur l'appareil.
 
 ## Utilisation
 
 1. Ouvrez le site : <https://steverlaabs.github.io/stever-pdf-compress/> ou ouvrez `index.html` via un serveur local.
-2. DÃ©posez un ou plusieurs fichiers PDF.
+2. Déposez un ou plusieurs fichiers PDF.
 3. Choisissez un niveau de compression, puis cliquez sur **Compresser tout**.
-4. TÃ©lÃ©chargez chaque rÃ©sultat ou l'archive ZIP complÃ¨te.
+4. Téléchargez chaque résultat ou l'archive ZIP complète.
 
 Les fichiers restent sur votre appareil pendant tout le traitement.
 
@@ -42,28 +42,28 @@ python serve.py
 
 ## Technique
 
-- **Fichier unique** : `index.html` embarque CSS, JavaScript, le moteur qpdf (WebAssembly), la bibliothÃ¨que ZIP (fflate) et le Web Worker â€” aucun fichier externe aprÃ¨s le chargement.
-- **ExÃ©cution** : module WebAssembly dans un Web Worker dÃ©diÃ© â€” l'interface reste fluide.
+- **Fichier unique** : `index.html` embarque CSS, JavaScript, le moteur qpdf (WebAssembly), la bibliothèque ZIP (fflate) et le Web Worker — aucun fichier externe après le chargement.
+- **Exécution** : module WebAssembly dans un Web Worker dédié — l'interface reste fluide.
 - **Interface** : HTML/CSS/JavaScript natifs, aucun framework.
-- **ConfidentialitÃ©** : aucun envoi rÃ©seau ; les documents restent en mÃ©moire dans l'onglet et disparaissent Ã  la fermeture.
+- **Confidentialité** : aucun envoi réseau ; les documents restent en mémoire dans l'onglet et disparaissent à la fermeture.
 
-## Contenu du dÃ©pÃ´t
+## Contenu du dépôt
 
-| Fichier | RÃ´le |
+| Fichier | Rôle |
 | --- | --- |
-| `index.html` | L'application complÃ¨te (HTML + CSS + JavaScript + qpdf WebAssembly + fflate + worker) |
-| `serve.py` | Serveur de dÃ©veloppement local (Python) |
-| `logo.svg` | Logo horizontal Â« Stever PDF Compress â€” ING STEVER Â» |
-| `logo-mark.svg` | EmblÃ¨me carrÃ© (avatar, favicon haute rÃ©solution) |
-| `favicon.svg` | Favicon simplifiÃ© |
-| `LICENSE` | Droits de publication â€“ ING STEVER |
+| `index.html` | L'application complète (HTML + CSS + JavaScript + qpdf WebAssembly + fflate + worker) |
+| `serve.py` | Serveur de développement local (Python) |
+| `logo.svg` | Logo horizontal « Stever PDF Compress — ING STEVER » |
+| `logo-mark.svg` | Emblème carré (avatar, favicon haute résolution) |
+| `favicon.svg` | Favicon simplifié |
+| `LICENSE` | Droits de publication – ING STEVER |
 
 ## Licence et droits
 
-**Â© 2026 ING STEVER â€” Tous droits rÃ©servÃ©s.**
-Toute reproduction, distribution ou modification sans autorisation Ã©crite prÃ©alable est interdite (voir `LICENSE`).
+**© 2026 ING STEVER — Tous droits réservés.**
+Toute reproduction, distribution ou modification sans autorisation écrite préalable est interdite (voir `LICENSE`).
 
-Les composants tiers intÃ©grÃ©s conservent leurs licences respectives : qpdf (Apache-2.0), qpdf-wasm, zlib, libjpeg-turbo, Emscripten, fflate (MIT).
+Les composants tiers intégrés conservent leurs licences respectives : qpdf (Apache-2.0), qpdf-wasm, zlib, libjpeg-turbo, Emscripten, fflate (MIT).
 
 ---
 <p align="right">
